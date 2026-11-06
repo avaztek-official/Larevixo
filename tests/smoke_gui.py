@@ -101,8 +101,13 @@ assert artisan.currentText() == 'make:model'
 
 def spin_arrow_contrast_pixels(image, rect, dark_theme):
     visible = 0
-    for y in range(rect.top() + 1, rect.bottom()):
-        for x in range(rect.left() + 1, rect.right()):
+    scale = image.devicePixelRatio()
+    left = round((rect.left() + 1) * scale)
+    top = round((rect.top() + 1) * scale)
+    right = round(rect.right() * scale)
+    bottom = round(rect.bottom() * scale)
+    for y in range(top, bottom):
+        for x in range(left, right):
             color = image.pixelColor(x, y)
             if dark_theme and color.red() > 200 and color.green() > 180 and color.blue() > 175:
                 visible += 1
