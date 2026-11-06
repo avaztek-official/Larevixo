@@ -1,128 +1,33 @@
-
-name: Build Larevixo Windows
-
-'on':
-  push:
-    branches:
-      - main
-
+name: Windows executable
+on:
   workflow_dispatch:
-
-permissions:
-  contents: read
-
+  push:
+    tags: ['v*']
 jobs:
-  build:
-    name: Build Windows EXE
+  windows:
     runs-on: windows-latest
-
-    timeout-minutes: 30
-
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          architecture: 'x64'
-
-      - name: Display environment information
+      - name: Install and test
         shell: pwsh
         run: |
-          python --version
-          python -m pip --version
-          Write-Host "Windows runner is ready."
-
-      - name: Install dependencies
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install -r requirements.txt pytest
+          .\.venv\Scripts\python.exe -m pytest -q tests
+          .\.venv\Scripts\python.exe tests/smoke_gui.py
+          foreach ($scale in @('1.25','1.5')) {
+            $env:QT_SCALE_FACTOR = $scale
+            .\.venv\Scripts\python.exe tests\smoke_gui.py
+            if ($LASTEXITCODE -ne 0) { throw "Qt smoke failed at scale $scale" }
+          }
+          Remove-Item Env:QT_SCALE_FACTOR -ErrorAction SilentlyContinue
+      - name: Build portable exe
         shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-          if (Test-Path "requirements.txt") {
-            Write-Host "Installing requirements.txt"
-            python -m pip install -r requirements.txt
-          }
-          elseif (Test-Path "pyproject.toml") {
-            Write-Host "Installing project dependencies"
-            python -m pip install .
-          }
-          else {
-            throw "No requirements.txt or pyproject.toml found."
-          }
-
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-          python -m pip install pyinstaller
-
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Build Larevixo executable
-        shell: pwsh
-        run: |
-          if (Test-Path "Larevixo.spec") {
-            Write-Host "Building from Larevixo.spec"
-
-            python -m PyInstaller `
-              --noconfirm `
-              --clean `
-              "Larevixo.spec"
-          }
-          elseif (Test-Path "main.py") {
-            Write-Host "Building from main.py"
-
-            python -m PyInstaller `
-              --noconfirm `
-              --clean `
-              --onefile `
-              --windowed `
-              --name Larevixo `
-              main.py
-          }
-          else {
-            throw "Neither Larevixo.spec nor main.py was found."
-          }
-
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Verify executable
-        shell: pwsh
-        run: |
-          if (-not (Test-Path "dist")) {
-            throw "Build failed: dist directory missing."
-          }
-
-          $executables = @(
-            Get-ChildItem "dist" -Filter "*.exe" -Recurse -File
-          )
-
-          if ($executables.Count -eq 0) {
-            throw "Build failed: no EXE file found."
-          }
-
-          Write-Host "EXE files:"
-          $executables |
-            Select-Object FullName, Length |
-            Format-Table -AutoSize
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v7
+        run: ./build-windows.ps1
+      - uses: actions/upload-artifact@v4
         with:
           name: Larevixo-Windows
-          path: dist/
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 6
+          path: dist/Larevixo.exe
