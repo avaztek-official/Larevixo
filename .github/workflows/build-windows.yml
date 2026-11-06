@@ -14,8 +14,8 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install and test
@@ -40,7 +40,7 @@ jobs:
           if (-not (Test-Path -LiteralPath 'dist/Larevixo.exe' -PathType Leaf)) {
             throw 'The build completed without producing dist/Larevixo.exe.'
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Larevixo-Windows
           path: dist/Larevixo.exe
