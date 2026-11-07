@@ -32,6 +32,23 @@ if (-not $versionMatch.Success -or [version]$versionMatch.Value -lt [version]'6.
     }
 }
 if (-not $versionMatch.Success -or [version]$versionMatch.Value -lt [version]'6.5.2') {
+    $registryPaths = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1'
+    )
+    foreach ($registryPath in $registryPaths) {
+        $installedVersion = (Get-ItemProperty -LiteralPath $registryPath -Name DisplayVersion -ErrorAction SilentlyContinue).DisplayVersion
+        $registryVersionMatch = [regex]::Match([string]$installedVersion, '^\d+\.\d+\.\d+(?:\.\d+)?')
+        if ($registryVersionMatch.Success -and [version]$registryVersionMatch.Value -ge [version]'6.5.2') {
+            $productVersion = $registryVersionMatch.Value
+            $versionMatch = $registryVersionMatch
+            break
+        }
+    }
+}
+if (-not $versionMatch.Success -or [version]$versionMatch.Value -lt [version]'6.5.2') {
     throw "Inno Setup 6.5.2 or newer is required for PNG branding. Detected: $productVersion"
 }
 
