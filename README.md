@@ -67,6 +67,12 @@ py -3 -m pip install pytest
 py -3 -m pytest -q tests
 ```
 
+## Code signing policy
+
+Larevixo is preparing an application to the [SignPath Foundation free code-signing program](https://signpath.org/terms.html); the project has not been accepted, and the current [v1.0.0 release](https://github.com/avaztek-official/Larevixo/releases/tag/v1.0.0) does not have a SignPath Foundation signature. The intended program attribution is: “Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).”
+
+For future releases, check a downloaded `.exe` in PowerShell with `Get-AuthenticodeSignature .\Larevixo.exe` and confirm `Status` is `Valid` and the signer matches the publisher stated for that release. See the [Code Signing Policy](CODE_SIGNING.md) for details and the [Privacy Policy](PRIVACY.md) for privacy information. A valid signature does not guarantee that Windows SmartScreen warnings will be absent.
+
 ## Project contents
 
 ```
