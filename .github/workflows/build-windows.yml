@@ -74,9 +74,10 @@ jobs:
           path: dist/Larevixo.exe
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: Larevixo-WindowsInstaller
           path: dist/Larevixo-Setup-*.exe
+          archive: false
           if-no-files-found: error
           retention-days: 14
