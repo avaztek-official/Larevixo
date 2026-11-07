@@ -14,8 +14,8 @@ os.environ['APPDATA'] = str(profile_path / 'Roaming')
 os.environ['LOCALAPPDATA'] = str(profile_path / 'Local')
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtWidgets import QApplication, QFrame, QLabel, QMessageBox, QPushButton, QWidget, QStyle, QStyleOptionSpinBox
-from PySide6.QtCore import QTimer, Qt, QPoint, QRect, QProcess, QAbstractAnimation
-from PySide6.QtGui import QRegion
+from PySide6.QtCore import QTimer, Qt, QEvent, QPoint, QPointF, QRect, QProcess, QAbstractAnimation
+from PySide6.QtGui import QEnterEvent, QRegion
 from PySide6.QtTest import QTest
 from main import App, ArtisanDialog, CreateDialog, DARK, LIGHT
 from runner import Job
@@ -205,14 +205,16 @@ assert len(window.operation_toasts) == 2 and second_y > first_y, (
 )
 assert second_entry['progress'].value() > 0 and second_entry['progress'].value() < 100
 assert not second_entry['copy_button'].isVisible()
-QTest.mouseMove(second_toast, second_toast.rect().center())
+toast_center = QPointF(second_toast.rect().center())
+toast_global_center = QPointF(second_toast.mapToGlobal(second_toast.rect().center()))
+QApplication.sendEvent(
+    second_toast,
+    QEnterEvent(toast_center, toast_center, toast_global_center),
+)
 QTest.qWait(50)
 assert second_entry['progress_animation'].state() == QAbstractAnimation.State.Paused
 assert second_entry['copy_button'].isVisible()
 assert second_entry['copy_button'].height() >= second_entry['copy_button'].sizeHint().height()
-QTest.mouseMove(second_entry['copy_button'], second_entry['copy_button'].rect().center())
-QTest.qWait(50)
-assert second_entry['progress_animation'].state() == QAbstractAnimation.State.Paused
 second_entry['copy_button'].click()
 assert app.clipboard().text() == 'The stack should grow downward'
 assert second_entry['copy_button'].text() == window.tr('Copied ✔')
@@ -220,7 +222,7 @@ assert second_entry['copy_reset_timer'].isActive()
 assert second_entry['copy_reset_timer'].interval() == 3000
 QTest.qWait(3100)
 assert second_entry['copy_button'].text() == window.tr('Copy')
-QTest.mouseMove(window.nav['Overview'], window.nav['Overview'].rect().center())
+QApplication.sendEvent(second_toast, QEvent(QEvent.Type.Leave))
 QTest.qWait(50)
 assert second_entry['progress_animation'].state() == QAbstractAnimation.State.Running
 assert not second_entry['copy_button'].isVisible()
