@@ -31,18 +31,38 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "Qt smoke failed at scale $scale" }
           }
           Remove-Item Env:QT_SCALE_FACTOR -ErrorAction SilentlyContinue
-      - name: Build portable exe
+      - name: Install Inno Setup
         shell: pwsh
-        run: .\build-windows.ps1
-      - name: Verify executable
+        run: choco install innosetup --yes --no-progress
+      - name: Build portable exe and installer
+        shell: pwsh
+        run: .\build-installer.ps1
+      - name: Verify and zip release files
         shell: pwsh
         run: |
-          if (-not (Test-Path -LiteralPath 'dist/Larevixo.exe' -PathType Leaf)) {
-            throw 'The build completed without producing dist/Larevixo.exe.'
+          $version = (Get-Content -LiteralPath 'VERSION' -Raw).Trim()
+          $portable = 'dist/Larevixo.exe'
+          $installer = "dist/Larevixo-Setup-$version.exe"
+          $archive = "dist/Larevixo-Setup-$version.zip"
+
+          foreach ($file in @($portable, $installer)) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "The build did not produce the expected file: $file"
+            }
+          }
+          Compress-Archive -LiteralPath $installer -DestinationPath $archive -CompressionLevel Optimal -Force
+          if (-not (Test-Path -LiteralPath $archive -PathType Leaf)) {
+            throw "The installer archive was not created: $archive"
           }
       - uses: actions/upload-artifact@v6
         with:
           name: Larevixo-Windows
           path: dist/Larevixo.exe
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v6
+        with:
+          name: Larevixo-Windows-Installer
+          path: dist/Larevixo-Setup-*.zip
           if-no-files-found: error
           retention-days: 14
