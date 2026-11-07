@@ -33,7 +33,26 @@ jobs:
           Remove-Item Env:QT_SCALE_FACTOR -ErrorAction SilentlyContinue
       - name: Install Inno Setup
         shell: pwsh
-        run: choco install innosetup --yes --no-progress
+        run: |
+          choco install innosetup --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Chocolatey could not install Inno Setup.' }
+
+          $programFilesX86 = [Environment]::GetFolderPath('ProgramFilesX86')
+          $programFiles = [Environment]::GetFolderPath('ProgramFiles')
+          $compilerCandidates = @(
+            (Join-Path $programFilesX86 'Inno Setup 7\ISCC.exe'),
+            (Join-Path $programFilesX86 'Inno Setup 6\ISCC.exe'),
+            (Join-Path $programFiles 'Inno Setup 7\ISCC.exe'),
+            (Join-Path $programFiles 'Inno Setup 6\ISCC.exe')
+          )
+          $compiler = $compilerCandidates |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+            Select-Object -First 1
+          if (-not $compiler) {
+            throw 'Chocolatey installed Inno Setup, but the real ISCC.exe was not found.'
+          }
+
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "INNO_SETUP_COMPILER=$compiler"
       - name: Build portable exe and installer
         shell: pwsh
         run: .\build-installer.ps1
