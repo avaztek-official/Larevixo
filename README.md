@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="Larevixo Neon Tech Showcase" src="https://github.com/user-attachments/assets/a62eb708-2b37-4c00-b03c-cbf9ba180495" />
+
 # Larevixo
 
 **Windows Laravel Development Manager · by AvazTek (unofficial)**
